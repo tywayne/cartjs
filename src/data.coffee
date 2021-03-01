@@ -94,21 +94,27 @@ CartJS.Data =
     e.preventDefault()
 
     dataArray = jQuery(this).serializeArray()
+    formIds = dataArray.filter((item) -> item.name == 'id' || item.name == 'id[]' )
+    items = []
 
-    id = undefined
-    quantity = undefined
-    properties = {}
-    jQuery.each dataArray, (i, item) ->
-      if item.name == 'id'
-        id = item.value
-      else if item.name == 'quantity'
-        quantity = item.value
-      else if item.name == 'selling_plan'
-        properties.selling_plan = item.value
-      else if item.name.match /^properties\[[\w-_ ]*\]$/
-        properties[item.name] = item.value
+    jQuery.each formIds, (i, formId) ->
+      cartItem = {
+        id: formId.value,
+        properties: {}
+      }
 
-    CartJS.Core.addItem(id, quantity, CartJS.Utils.unwrapKeys(properties))
+      jQuery.each dataArray, (i, dataItem) ->
+        if dataItem.name == 'quantity'
+          cartItem.quantity = dataItem.value
+        else if dataItem.name == 'selling_plan'
+          cartItem.properties.selling_plan = dataItem.value
+        else if dataItem.name.match /^properties\[[\w-_ ]*\]$/
+          cartItem.properties[dataItem.name] = dataItem.value
+
+      cartItem.properties = CartJS.Utils.unwrapKeys(cartItem.properties)
+      items.push(cartItem);
+
+    CartJS.Core.addItems(items)
 
   # Handler for rendering simple cart properties to bound elements.
   render: (e, cart) ->

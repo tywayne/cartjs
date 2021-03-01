@@ -2131,24 +2131,32 @@
       return CartJS.Core.setAttribute(attribute, $input.is(':checked') ? 'Yes' : '');
     },
     submit: function(e) {
-      var dataArray, id, properties, quantity;
+      var dataArray, formIds, items;
       e.preventDefault();
       dataArray = jQuery(this).serializeArray();
-      id = void 0;
-      quantity = void 0;
-      properties = {};
-      jQuery.each(dataArray, function(i, item) {
-        if (item.name === 'id') {
-          return id = item.value;
-        } else if (item.name === 'quantity') {
-          return quantity = item.value;
-        } else if (item.name === 'selling_plan') {
-          return properties.selling_plan = item.value;
-        } else if (item.name.match(/^properties\[[\w-_ ]*\]$/)) {
-          return properties[item.name] = item.value;
-        }
+      formIds = dataArray.filter(function(item) {
+        return item.name === 'id' || item.name === 'id[]';
       });
-      return CartJS.Core.addItem(id, quantity, CartJS.Utils.unwrapKeys(properties));
+      items = [];
+      jQuery.each(formIds, function(i, formId) {
+        var cartItem;
+        cartItem = {
+          id: formId.value,
+          properties: {}
+        };
+        jQuery.each(dataArray, function(i, dataItem) {
+          if (dataItem.name === 'quantity') {
+            return cartItem.quantity = dataItem.value;
+          } else if (dataItem.name === 'selling_plan') {
+            return cartItem.properties.selling_plan = dataItem.value;
+          } else if (dataItem.name.match(/^properties\[[\w-_ ]*\]$/)) {
+            return cartItem.properties[dataItem.name] = dataItem.value;
+          }
+        });
+        cartItem.properties = CartJS.Utils.unwrapKeys(cartItem.properties);
+        return items.push(cartItem);
+      });
+      return CartJS.Core.addItems(items);
     },
     render: function(e, cart) {
       var context;
